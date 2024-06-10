@@ -1,7 +1,9 @@
-from fastapi import FastAPI
-from test_project.backend.models import StockMarket
+from fastapi import FastAPI, Depends
+from models import StockMarket
 from sqlalchemy.orm import Session
+from db import get_db
 import csv
+from datetime import datetime
 
 
 app = FastAPI()
@@ -17,26 +19,27 @@ async def index():
 
 def process_csv_data(row):
     data = {}
-    for date, trade_code, high, low, open, close, volume in row:
-        data["date"] = date
-        data["trade_code"] = trade_code
-        data["high"] = high
-        data["low"] = low
-        data["open"] = open
-        data["close"] = close
-        data["volume"] = volume
+    data["date"] = datetime.strptime(row[0], "%Y-%m-%d").date()
+    data["trade_code"] = row[1]
+    data["high"] = row[2].replace(",", "")
+    data["low"] = row[3].replace(",", "")
+    data["open"] = row[4].replace(",", "")
+    data["close"] = row[5].replace(",", "")
+    data["volume"] = row[6].replace(",", "")
+    print(data)
+
     return data
 
-@app.post("/insert_data")
-async def insert_data():
-    with open('../misc/stock_market.csv', 'r') as csvfile:
+@app.get("/insert_data")
+async def insert_data(db: Session=Depends(get_db)):
+    with open('misc/stock_market_data.csv', 'r') as csvfile:
         next(csvfile, None)
         csv_reader = csv.reader(csvfile)
 
         for row in csv_reader:
             processed_data = process_csv_data(row)
             new_entry = StockMarket(**processed_data)
-            Session.add(new_entry)
-    Session.close
+            db.add(new_entry)
+    db.commit()
     return {"message": "Inserted Data Succesfully"}
 

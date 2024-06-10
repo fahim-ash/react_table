@@ -20,7 +20,8 @@ class StockMarket(Base):
     low = Column(Numeric)
     open = Column(Numeric)
     close = Column(Numeric)
-    volume = Column(String)
+    volume = Column(Numeric)
 
 def create_database():
+    print('database has been created')
     Base.metadata.create_all(bind=engine)
