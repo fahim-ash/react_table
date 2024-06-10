@@ -6,5 +6,5 @@ def stop_server():
             print('the server is shutting down')
             process.terminate()
 
-# stop the server
+# stop server
 stop_server()
