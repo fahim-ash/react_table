@@ -1,15 +1,11 @@
-import * as React from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import {
-  randomCreatedDate,
-  randomTraderName,
-  randomUpdatedDate,
-} from "@mui/x-data-grid-generator";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import axios from "axios";
 
 const useFakeMutation = () => {
-  return React.useCallback(
+  return useCallback(
     (user) =>
       new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -26,12 +22,12 @@ const useFakeMutation = () => {
 
 export default function ServerSidePersistence() {
   const mutateRow = useFakeMutation();
-
-  const [snackbar, setSnackbar] = React.useState(null);
-
+  const [snackbar, setSnackbar] = useState(null);
+  const [data, setData] = useState([]);
   const handleCloseSnackbar = () => setSnackbar(null);
 
-  const processRowUpdate = React.useCallback(
+  // use this to update data in the backend , still not prpared
+  const processRowUpdate = useCallback(
     async (newRow) => {
       // Make the HTTP request to save in the backend
       const response = await mutateRow(newRow);
@@ -41,14 +37,29 @@ export default function ServerSidePersistence() {
     [mutateRow]
   );
 
-  const handleProcessRowUpdateError = React.useCallback((error) => {
+  // handle any error during updating data
+  const handleProcessRowUpdateError = useCallback((error) => {
     setSnackbar({ children: error.message, severity: "error" });
+  }, []);
+
+  // get data from backend
+  useEffect(() => {
+    const getRowData = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/stock_market");
+        console.log(response.data);
+        setData(response.data);
+      } catch (error) {
+        console.log("why");
+      }
+    };
+    getRowData();
   }, []);
 
   return (
     <div style={{ height: 400, width: "100%" }}>
       <DataGrid
-        rows={rows}
+        rows={data}
         columns={columns}
         processRowUpdate={processRowUpdate}
         onProcessRowUpdateError={handleProcessRowUpdateError}
@@ -68,67 +79,48 @@ export default function ServerSidePersistence() {
 }
 
 const columns = [
-  { field: "name", headerName: "Name", width: 180, editable: true },
+  { field: "id", headerName: "ID", width: 180, editable: false },
   {
-    field: "age",
-    headerName: "Age",
-    type: "number",
-    editable: true,
-    align: "left",
-    headerAlign: "left",
-  },
-  {
-    field: "dateCreated",
-    headerName: "Date Created",
+    field: "date",
+    headerName: "Date",
     type: "date",
-    width: 180,
+    editable: true,
+    valueGetter: (value) => value && new Date(value),
+  },
+  {
+    field: "trade_code",
+    headerName: "Trade Code",
+    editable: false,
+    width: 200,
+  },
+  {
+    field: "high",
+    headerName: "High",
+    width: 150,
     editable: true,
   },
   {
-    field: "lastLogin",
-    headerName: "Last Login",
-    type: "dateTime",
-    width: 220,
+    field: "low",
+    headerName: "Low",
+    width: 150,
+    editable: true,
+  },
+  {
+    field: "open",
+    headerName: "Open",
+    width: 150,
+    editable: true,
+  },
+  {
+    field: "close",
+    headerName: "Close",
+    width: 150,
+    editable: true,
+  },
+  {
+    field: "volume",
+    headerName: "Volume",
+    width: 150,
     editable: true,
   },
 ];
-
-const rows = [
-  {
-    id: 1,
-    name: randomTraderName(),
-    age: 25,
-    dateCreated: randomCreatedDate(),
-    lastLogin: randomUpdatedDate(),
-  },
-  {
-    id: 2,
-    name: randomTraderName(),
-    age: 36,
-    dateCreated: randomCreatedDate(),
-    lastLogin: randomUpdatedDate(),
-  },
-  {
-    id: 3,
-    name: randomTraderName(),
-    age: 19,
-    dateCreated: randomCreatedDate(),
-    lastLogin: randomUpdatedDate(),
-  },
-  {
-    id: 4,
-    name: randomTraderName(),
-    age: 28,
-    dateCreated: randomCreatedDate(),
-    lastLogin: randomUpdatedDate(),
-  },
-  {
-    id: 5,
-    name: randomTraderName(),
-    age: 23,
-    dateCreated: randomCreatedDate(),
-    lastLogin: randomUpdatedDate(),
-  },
-];
-
-// https://mui.com/x/react-data-grid/editing/ got from this
