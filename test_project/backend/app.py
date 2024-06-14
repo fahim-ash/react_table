@@ -19,7 +19,6 @@ app.add_middleware(
 
 @app.get("/")
 async def read_root():
-    print('hello world')
     return {"message": "Hello, World"}
 
 @app.get("/stock_market", response_model=List[StockMarketBase])
@@ -31,6 +30,19 @@ async def stock_market(db: Session = Depends(get_db)):
     return data
 
 
+@app.post("/update")
+async def update(data: StockMarketBase, db: Session = Depends(get_db)):
+    try:
+        stock = db.query(StockMarket).filter(StockMarket.id == data.id).first()
+        for key, value in data.model_dump(exclude_unset=True).items():
+            setattr(stock, key, value)
+        db.commit()
+        db.refresh(stock)
+        return {"message": "Success"}
+    except:
+        return {"message": "Failed"}
+    
+
 def process_csv_data(row):
     data = {}
     data["date"] = datetime.strptime(row[0], "%Y-%m-%d").date()
@@ -40,7 +52,6 @@ def process_csv_data(row):
     data["open"] = row[4].replace(",", "")
     data["close"] = row[5].replace(",", "")
     data["volume"] = row[6].replace(",", "")
-    print(data)
 
     return data
 

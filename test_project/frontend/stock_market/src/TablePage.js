@@ -4,38 +4,23 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import axios from "axios";
 
-const useFakeMutation = () => {
-  return useCallback(
-    (user) =>
-      new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (user.name?.trim() === "") {
-            reject(new Error("Error while saving user: name cannot be empty."));
-          } else {
-            resolve({ ...user, name: user.name?.toUpperCase() });
-          }
-        }, 200);
-      }),
-    []
-  );
-};
-
 export default function ServerSidePersistence() {
-  const mutateRow = useFakeMutation();
   const [snackbar, setSnackbar] = useState(null);
   const [data, setData] = useState([]);
   const handleCloseSnackbar = () => setSnackbar(null);
 
-  // use this to update data in the backend , still not prpared
-  const processRowUpdate = useCallback(
-    async (newRow) => {
-      // Make the HTTP request to save in the backend
-      const response = await mutateRow(newRow);
-      setSnackbar({ children: "User successfully saved", severity: "success" });
-      return response;
-    },
-    [mutateRow]
-  );
+  // use this to update data in the backend
+  const processRowUpdate = useCallback(async (newRow) => {
+    try {
+      const response = await axios.post("http://localhost:8000/update", newRow);
+      let data = response.data;
+      setSnackbar({ children: data.message, severity: "success" });
+      alert("hello");
+      return;
+    } catch (error) {
+      setSnackbar({ children: "didn't update", severity: "error" });
+    }
+  }, []);
 
   // handle any error during updating data
   const handleProcessRowUpdateError = useCallback((error) => {
@@ -47,11 +32,8 @@ export default function ServerSidePersistence() {
     const getRowData = async () => {
       try {
         const response = await axios.get("http://localhost:8000/stock_market");
-        console.log(response.data);
         setData(response.data);
-      } catch (error) {
-        console.log("why");
-      }
+      } catch (error) {}
     };
     getRowData();
   }, []);
